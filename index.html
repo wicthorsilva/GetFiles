@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Excel File Mover</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; }
+    #status { margin-top: 20px; }
+    #loading { display: none; margin-top: 20px; }
+    #conflict-dialog { display: none; margin-top: 20px; }
+  </style>
+</head>
+<body>
+  <h1>Selecione as Pastas</h1>
+  <form id="folderForm">
+    <label for="source">Pasta de Origem:</label>
+    <input type="text" id="source" name="source" readonly>
+    <button type="button" onclick="selectFolder('source')">Selecionar</button><br><br>
+
+    <label for="destination">Pasta de Destino:</label>
+    <input type="text" id="destination" name="destination" readonly>
+    <button type="button" onclick="selectFolder('destination')">Selecionar</button><br><br>
+
+    <label><input type="radio" name="operation" value="move" checked> Mover</label>
+    <label><input type="radio" name="operation" value="copy"> Copiar</label><br><br>
+
+    <button type="button" onclick="processFiles()">Processar Arquivos</button>
+  </form>
+
+  <div id="status"></div>
+  <div id="loading">Processando, por favor aguarde...</div>
+  <div id="conflict-dialog">
+    <p>Já existem arquivos com o mesmo nome na pasta de destino. O que você deseja fazer?</p>
+    <label><input type="radio" name="conflict-action" value="rename" checked> Renomear</label>
+    <label><input type="radio" name="conflict-action" value="overwrite"> Substituir</label><br><br>
+    <button type="button" onclick="handleConflictAction()">Confirmar</button>
+    <button type="button" onclick="cancelConflict()">Cancelar</button>
+  </div>
+
+  <script>
+    const { ipcRenderer } = require('electron');
+
+    function selectFolder(inputId) {
+      ipcRenderer.invoke('select-folder').then(result => {
+        if (!result.canceled) {
+          document.getElementById(inputId).value = result.filePaths[0];
+        }
+      });
+    }
+
+    function processFiles() {
+      const source = document.getElementById('source').value;
+      const destination = document.getElementById('destination').value;
+      const operation = document.querySelector('input[name="operation"]:checked').value;
+
+      document.getElementById('loading').style.display = 'block';
+      document.getElementById('conflict-dialog').style.display = 'none';
+
+      ipcRenderer.send('process-files', { source, destination, moveFiles: operation === 'move', copyFiles: operation === 'copy' });
+    }
+
+    function handleConflictAction() {
+      const conflictAction = document.querySelector('input[name="conflict-action"]:checked').value;
+
+      ipcRenderer.send('conflict-action', { action: conflictAction });
+      document.getElementById('conflict-dialog').style.display = 'none';
+    }
+
+    function cancelConflict() {
+      document.getElementById('conflict-dialog').style.display = 'none';
+    }
+
+    ipcRenderer.on('move-files-response', (event, response) => {
+      document.getElementById('loading').style.display = 'none';
+      document.getElementById('status').innerText = response.message;
+    });
+
+    ipcRenderer.on('show-conflict-dialog', () => {
+      document.getElementById('loading').style.display = 'none';
+      document.getElementById('conflict-dialog').style.display = 'block';
+    });
+  </script>
+</body>
+</html>

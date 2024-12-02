@@ -1,0 +1,19 @@
+{
+  "name": "project-get-excel",
+  "version": "1.0.0",
+  "description": "A simple app to move Excel files from selected folders.",
+  "author": "WicthorDev",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder"
+  },
+  "dependencies": {
+    "fs-extra": "^11.2.0",
+    "inquirer": "^8.2.6"
+  },
+  "devDependencies": {
+    "electron": "^32.0.1",
+    "electron-builder": "^24.13.3"
+  }
+}
